@@ -18,8 +18,8 @@ tf.app.flags.DEFINE_integer("test_size", 5000, "test_size")
 tf.app.flags.DEFINE_string("word_vector", "../vector.txt", "word vector")
 
 tf.app.flags.DEFINE_string("data_dir", "../weibo_pair", "data_dir")
-tf.app.flags.DEFINE_string("train_dir", "./trainVAE", "train_dir")
-tf.app.flags.DEFINE_string("log_dir", "./logVAE", "log_dir")
+tf.app.flags.DEFINE_string("train_dir", "./trainVAE4", "train_dir")
+tf.app.flags.DEFINE_string("log_dir", "./logVAE4", "log_dir")
 tf.app.flags.DEFINE_string("attn_mode", "None", "attn_mode")
 tf.app.flags.DEFINE_string("opt", "SGD", "optimizer")
 tf.app.flags.DEFINE_string("infer_path_post", "../weibo_pair/test.weibo_pair.response", "path of the post file to be infer")
@@ -39,7 +39,7 @@ tf.app.flags.DEFINE_integer("recog_hidden_units", 512, "recognition network MLP 
 # tf.app.flags.DEFINE_integer("prior_hidden_units", 512, "prior network MLP hidden layer units")
 tf.app.flags.DEFINE_integer("z_dim", 128, "num_units")
 tf.app.flags.DEFINE_integer("full_kl_step", 50000, "kl_weight increase from 0 to 1 linearly in full_kl_step")
-tf.app.flags.DEFINE_integer("min_kl", 2, "kl loss penalty threshold")
+tf.app.flags.DEFINE_integer("min_kl", 1, "kl loss penalty threshold")
 tf.app.flags.DEFINE_integer("beam_width", 5, "beam_width")
 tf.app.flags.DEFINE_integer("max_decode_len", 128, "max_decode_len")
 tf.app.flags.DEFINE_integer("vocab_size", 40000, "vocab_size")
@@ -75,7 +75,7 @@ def main(unused_argv):
                 train_writer = tf.summary.FileWriter(os.path.join(FLAGS.log_dir, 'train'), sess.graph)
 
             valid_writer = tf.summary.FileWriter(os.path.join(FLAGS.log_dir, 'valid'))
-            summary_list = ['ppl', 'sen_loss', 'l2_loss', 'loss']
+            summary_list = ['ppl', 'elbo', 'sen_loss', 'kl_loss', 'avg_kld', 'kl_weights', 'l2_loss', 'loss']
             summary_num = len(summary_list)
             summary_placeholders = [tf.placeholder(tf.float32) for i in range(summary_num)]
             summary_op = [tf.summary.scalar(summary_list[i], summary_placeholders[i]) for i in range(summary_num)]

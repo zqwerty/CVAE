@@ -19,7 +19,7 @@ class CVAE(object):
         self.train_keep_prob = tfFLAGS.keep_prob
         self.max_decode_len = tfFLAGS.max_decode_len
         self.bi_encode = tfFLAGS.bi_encode
-        self.recog_hidden_units = tfFLAGS.recog_hidden_units
+        # self.recog_hidden_units = tfFLAGS.recog_hidden_units
         # self.prior_hidden_units = tfFLAGS.prior_hidden_units
         self.z_dim = tfFLAGS.z_dim
         self.full_kl_step = tfFLAGS.full_kl_step
@@ -128,7 +128,8 @@ class CVAE(object):
         # Calculate and clip gradients
         params = tf.trainable_variables()
         self.l2_loss = self.l2_loss_weight * tf.reduce_sum([tf.nn.l2_loss(v) for v in params])
-        self.loss = self.sen_loss + self.l2_loss
+        self.elbo = self.sen_loss + self.kl_loss
+        self.loss = self.elbo + self.l2_loss
         gradients = tf.gradients(self.loss, params)
         clipped_gradients, _ = tf.clip_by_global_norm(gradients, self.max_gradient_norm)
         self.train_op = self.opt.apply_gradients(zip(clipped_gradients, params), global_step=self.global_step)
@@ -395,8 +396,11 @@ class CVAE(object):
         if is_train:
             output_feed = [self.train_op,
                            self.ppl_loss,
-                           # self.elbo,
+                           self.elbo,
                            self.sen_loss,
+                           self.kl_loss,
+                           self.avg_kld,
+                           self.kl_weights,
                            self.l2_loss,
                            self.loss
                            # self.kl_loss,
@@ -411,8 +415,11 @@ class CVAE(object):
             input_feed[self.keep_prob] = self.train_keep_prob
         else:
             output_feed = [self.ppl_loss,
-                           # self.elbo,
+                           self.elbo,
                            self.sen_loss,
+                           self.kl_loss,
+                           self.avg_kld,
+                           self.kl_weights,
                            self.l2_loss,
                            self.loss
                            # self.kl_loss,

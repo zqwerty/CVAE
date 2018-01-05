@@ -110,12 +110,13 @@ def infer(sess, infer_path_post, infer_path_resp, batch_size=128, use_encoder=Tr
                 'input/use_encoder:0': use_encoder,
                 'input/use_sample:0': use_sample,
             }
-            res = sess.run(['decode_1/inference:0', 'decode_2/beam_out:0'], input_feed)
             print id
             for i in range(len(batch['post_len'])):
                 print >> f2, 'post: ' + ' '.join(post[id])
-                print >> f2, 'infer: ' + cut_eos(' '.join(res[0][i]))
-                print >> f2, 'beam: ' + cut_eos(' '.join(res[1][i, :, 0]))
+                for j in range(sample_times):
+                    res = sess.run(['decode_1/inference:0', 'decode_2/beam_out:0'], input_feed)
+                    print >> f2, 'infer: ' + cut_eos(' '.join(res[0][i]))
+                    print >> f2, 'beam: ' + cut_eos(' '.join(res[1][i, :, 0]))
                 print >> f2, ''
 
                 id += 1
@@ -226,6 +227,7 @@ def decode_from_z(sess, data, z):
 
 
 def interpolate(sess, z1, z2, n_sample, data):
+    print 'interpolate:'
     pts = []
     for s, e in zip(z1[0].tolist(), z2[0].tolist()):
         pts.append(np.linspace(s, e, n_sample))
