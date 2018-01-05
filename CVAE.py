@@ -2,17 +2,7 @@ import tensorflow as tf
 from tensorflow.contrib.lookup.lookup_ops import MutableHashTable
 from tensorflow.python.layers.core import Dense
 from tensorflow.python.framework import constant_op
-
-_PAD = b"PAD"
-_GO = b"GO"
-_EOS = b"EOS"
-_UNK = b"UNK"
-_START_VOCAB = [_PAD, _EOS, _GO, _UNK]
-
-PAD_ID = 0
-EOS_ID = 1
-GO_ID = 2
-UNK_ID = 3
+from utils import UNK_ID, _UNK, GO_ID, EOS_ID
 
 
 class CVAE(object):
