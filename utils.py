@@ -88,7 +88,7 @@ def eval_batches(data, batch_size):
         yield batched_data
 
 
-def infer(sess, infer_path_post, infer_path_resp, batch_size=128):
+def infer(sess, infer_path_post, infer_path_resp, batch_size=128, use_encoder=True, use_sample=True, sample_times=5):
     if infer_path_post is not "":
         f1 = open(infer_path_post)
         post = [line.strip().split() for line in f1]
@@ -107,7 +107,8 @@ def infer(sess, infer_path_post, infer_path_resp, batch_size=128):
                 'input/post_len:0': batch['post_len'],
                 'input/response_string:0': batch['response'],
                 'input/response_len:0': batch['response_len'],
-                'input/use_encoder:0': True,
+                'input/use_encoder:0': use_encoder,
+                'input/use_sample:0': use_sample,
             }
             res = sess.run(['decode_1/inference:0', 'decode_2/beam_out:0'], input_feed)
             print id
@@ -128,8 +129,12 @@ def infer(sess, infer_path_post, infer_path_resp, batch_size=128):
             infer_data = [infer_data]
             batch = gen_batched_data(infer_data)
 
-            z1 = get_enc_z(sess, batch)
-            decode_from_z(sess, batch, z1)
+            mu1 = get_enc_mu(sess, batch)
+            decode_from_z(sess, batch, mu1)
+
+            for _ in range(sample_times):
+                z = get_enc_z(sess, batch)
+                decode_from_z(sess, batch, z)
 
             infer_data = {}
             infer_data['post'] = raw_input('post > ').strip().split()
@@ -137,10 +142,14 @@ def infer(sess, infer_path_post, infer_path_resp, batch_size=128):
             infer_data = [infer_data]
             batch = gen_batched_data(infer_data)
 
-            z2 = get_enc_z(sess, batch)
-            decode_from_z(sess, batch, z2)
+            mu2 = get_enc_mu(sess, batch)
+            decode_from_z(sess, batch, mu2)
 
-            interpolate(sess, z1, z2, 10, batch)
+            for _ in range(sample_times):
+                z = get_enc_z(sess, batch)
+                decode_from_z(sess, batch, z)
+
+            interpolate(sess, mu1, mu2, 10, batch)
 
 
 def gen_batched_data(data):
@@ -171,6 +180,19 @@ def cut_eos(sentence):
     return sentence
 
 
+def get_enc_mu(sess, data):
+    input_feed = {
+        'input/post_string:0': data['post'],
+        'input/post_len:0': data['post_len'],
+        'input/response_string:0': data['response'],
+        'input/response_len:0': data['response_len'],
+        'input/use_encoder:0': True,
+        'input/use_sample:0': True,
+    }
+    output_feed = ['RecognitionNetwork/mu:0']
+    return sess.run(output_feed, input_feed)[0]
+
+
 def get_enc_z(sess, data):
     input_feed = {
         'input/post_string:0': data['post'],
@@ -178,8 +200,9 @@ def get_enc_z(sess, data):
         'input/response_string:0': data['response'],
         'input/response_len:0': data['response_len'],
         'input/use_encoder:0': True,
+        'input/use_sample:0': True,
     }
-    output_feed = ['hidden/enc_z/MatMul:0']
+    output_feed = ['RecognitionNetwork/recog_z:0']
     return sess.run(output_feed, input_feed)[0]
 
 
@@ -190,6 +213,7 @@ def decode_from_z(sess, data, z):
         'input/response_string:0': data['response'],
         'input/response_len:0': data['response_len'],
         'input/use_encoder:0': False,
+        'input/use_sample:0': False,
         'input/input_z:0': z
     }
     output_feed = ['decode_1/inference:0', 'decode_2/beam_out:0']

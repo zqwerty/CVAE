@@ -2,7 +2,7 @@ import tensorflow as tf
 from tensorflow.contrib.lookup.lookup_ops import MutableHashTable
 from tensorflow.python.layers.core import Dense
 from tensorflow.python.framework import constant_op
-from utils import UNK_ID, _UNK, GO_ID, EOS_ID
+from utils import UNK_ID, _UNK, GO_ID, EOS_ID, gaussian_kld, sample_gaussian
 
 
 class CVAE(object):
@@ -19,10 +19,11 @@ class CVAE(object):
         self.train_keep_prob = tfFLAGS.keep_prob
         self.max_decode_len = tfFLAGS.max_decode_len
         self.bi_encode = tfFLAGS.bi_encode
-        # self.recog_hidden_units = tfFLAGS.recog_hidden_units
+        self.recog_hidden_units = tfFLAGS.recog_hidden_units
         # self.prior_hidden_units = tfFLAGS.prior_hidden_units
         self.z_dim = tfFLAGS.z_dim
-        # self.full_kl_step = tfFLAGS.full_kl_step
+        self.full_kl_step = tfFLAGS.full_kl_step
+        self.min_kl = tfFLAGS.min_kl
         self.l2_loss_weight = tfFLAGS.l2_loss_weight
 
         self.global_step = tf.Variable(0, name="global_step", trainable=False)
@@ -61,27 +62,39 @@ class CVAE(object):
             # self.response_state = self._get_representation_from_enc_state(self.enc_response_state)
             # self.cond_embed = tf.concat([self.post_state, self.ref_state], axis=-1)
 
-        with tf.variable_scope("hidden"):
-            self.enc_z = tf.layers.dense(inputs=self.post_state, units=self.z_dim, activation=None, use_bias=False,
-                                         name='enc_z')
+        # with tf.variable_scope("hidden"):
+        #     self.enc_z = tf.layers.dense(inputs=self.post_state, units=self.z_dim, activation=None, use_bias=False,
+        #                                  name='enc_z')
 
-        # with tf.variable_scope("RecognitionNetwork"):
-        #     recog_input = tf.concat([self.cond_embed, self.response_state], axis=-1)
-        #     recog_hidden = tf.layers.dense(inputs=recog_input, units=self.recog_hidden_units, activation=tf.nn.tanh)
-        #     recog_mulogvar = tf.layers.dense(inputs=recog_hidden, units=self.z_dim*2, activation=None)
-        ##     recog_mulogvar = tf.layers.dense(inputs=recog_input, units=self.z_dim * 2, activation=None)
-        #     recog_mu, recog_logvar = tf.split(recog_mulogvar, 2, axis=-1)
+        with tf.variable_scope("RecognitionNetwork"):
+            recog_input = self.post_state
+            recog_mulogvar = tf.layers.dense(inputs=recog_input, units=self.z_dim * 2, activation=None)
+            recog_mu, recog_logvar = tf.split(recog_mulogvar, 2, axis=-1)
+            self.mu = tf.identity(recog_mu, name='mu')
+            self.recog_z = tf.identity(sample_gaussian(recog_mu, recog_logvar), name='recog_z')
 
-        # with tf.variable_scope("PriorNetwork"):
+            # recog_input = tf.concat([self.cond_embed, self.response_state], axis=-1)
+            # recog_hidden = tf.layers.dense(inputs=recog_input, units=self.recog_hidden_units, activation=tf.nn.tanh)
+            # recog_mulogvar = tf.layers.dense(inputs=recog_hidden, units=self.z_dim*2, activation=None)
+            # # recog_mulogvar = tf.layers.dense(inputs=recog_input, units=self.z_dim * 2, activation=None)
+            # recog_mu, recog_logvar = tf.split(recog_mulogvar, 2, axis=-1)
+
+        with tf.variable_scope("PriorNetwork"):
+            prior_mu, prior_logvar = tf.zeros_like(recog_mu), tf.ones_like(recog_logvar)
+            self.prior_z = tf.identity(sample_gaussian(prior_mu, prior_logvar), name='prior_z')
         #     prior_input = self.cond_embed
         #     prior_hidden = tf.layers.dense(inputs=prior_input, units=self.prior_hidden_units, activation=tf.nn.tanh)
         #     prior_mulogvar = tf.layers.dense(inputs=prior_hidden, units=self.z_dim*2, activation=None)
         #     prior_mu, prior_logvar = tf.split(prior_mulogvar, 2, axis=-1)
 
         with tf.variable_scope("GenerationNetwork"):
-            latent_sample = tf.cond(self.use_encoder,
-                                    lambda: self.enc_z,
-                                    lambda: self.input_z,
+            latent_sample = tf.cond(self.use_sample,
+                                    lambda: tf.cond(self.use_encoder,
+                                                    lambda: self.recog_z,
+                                                    lambda: self.prior_z),
+                                    lambda: tf.cond(self.use_encoder,
+                                                    lambda: self.mu,
+                                                    lambda: self.input_z),
                                     name='latent_sample')
             # latent_sample = tf.cond(self.use_encoder,
             #                         lambda: self.enc_z,
@@ -105,10 +118,10 @@ class CVAE(object):
                     [tf.layers.dense(inputs=latent_sample, units=self.num_units, activation=None, use_bias=False)
                      for _ in range(self.num_layers)])
 
-            # kld = gaussian_kld(recog_mu, recog_logvar, prior_mu, prior_logvar)
-            # self.avg_kld = tf.reduce_mean(kld)
-            # self.kl_weights = tf.minimum(tf.to_float(self.global_step) / self.full_kl_step, 1.0)
-            # self.kl_loss = self.kl_weights * self.avg_kld
+            kld = gaussian_kld(recog_mu, recog_logvar, prior_mu, prior_logvar)
+            self.avg_kld = tf.reduce_mean(kld)
+            self.kl_weights = tf.minimum(tf.to_float(self.global_step) / self.full_kl_step, 1.0)
+            self.kl_loss = self.kl_weights * tf.maximum(self.avg_kld, self.min_kl)
 
         self._build_decoder()
 
@@ -178,6 +191,7 @@ class CVAE(object):
             self.input_z = tf.placeholder_with_default(tf.zeros((1, self.z_dim), dtype=tf.float32),
                                                        (1, self.z_dim),
                                                        name="input_z")
+            self.use_sample = tf.placeholder(dtype=tf.bool, name="use_sample")
             # self.use_prior = tf.placeholder(dtype=tf.bool, name="use_prior")
 
     def _build_encoder(self, scope, inputs, sequence_length):
@@ -375,6 +389,7 @@ class CVAE(object):
             self.response_string: data['response'],
             self.response_len: data['response_len'],
             self.use_encoder: True,
+            self.use_sample: True
             # self.use_prior: is_train,
         }
         if is_train:
