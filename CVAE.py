@@ -36,6 +36,8 @@ class CVAE(object):
             self.opt = tf.train.GradientDescentOptimizer(self.learning_rate)
         elif tfFLAGS.opt == 'Momentum':
             self.opt = tf.train.MomentumOptimizer(learning_rate=tfFLAGS.learning_rate, momentum=tfFLAGS.momentum)
+        elif tfFLAGS.opt == 'Adadelta':
+            self.opt = tf.train.AdadeltaOptimizer(learning_rate=tfFLAGS.learning_rate)
         else:
             self.opt = tf.train.AdamOptimizer(learning_rate=tfFLAGS.learning_rate)
 
@@ -239,7 +241,7 @@ class CVAE(object):
 
     def _build_decoder(self):
         with tf.variable_scope("decode", initializer=tf.orthogonal_initializer()):
-            dec_cell, init_state = self._build_decoder_cell(self.enc_post_outputs, self.post_len, self.dec_init_state)
+            dec_cell, init_state = self._build_decoder_cell(None, None, self.dec_init_state)
 
             train_helper = tf.contrib.seq2seq.TrainingHelper(
                 inputs=self.dec_inp,
@@ -282,7 +284,7 @@ class CVAE(object):
             self.train_out = self.index2symbol.lookup(tf.cast(train_output.sample_id, tf.int64), name='train_out')
 
         with tf.variable_scope("decode", reuse=True):
-            dec_cell, init_state = self._build_decoder_cell(self.enc_post_outputs, self.post_len, self.dec_init_state)
+            dec_cell, init_state = self._build_decoder_cell(None, None, self.dec_init_state)
 
             start_tokens = tf.tile(tf.constant([GO_ID], dtype=tf.int32), [self.batch_size])
             end_token = EOS_ID
@@ -306,10 +308,10 @@ class CVAE(object):
 
         with tf.variable_scope("decode", reuse=True):
             dec_init_state = tf.contrib.seq2seq.tile_batch(self.dec_init_state, self.beam_width)
-            enc_outputs = tf.contrib.seq2seq.tile_batch(self.enc_post_outputs, self.beam_width)
-            post_len = tf.contrib.seq2seq.tile_batch(self.post_len, self.beam_width)
+            # enc_outputs = tf.contrib.seq2seq.tile_batch(self.enc_post_outputs, self.beam_width)
+            # post_len = tf.contrib.seq2seq.tile_batch(self.post_len, self.beam_width)
 
-            dec_cell, init_state = self._build_decoder_cell(enc_outputs, post_len, dec_init_state,
+            dec_cell, init_state = self._build_decoder_cell(None, None, dec_init_state,
                                                             beam_width=self.beam_width)
 
             beam_decoder = tf.contrib.seq2seq.BeamSearchDecoder(
