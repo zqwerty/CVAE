@@ -4,7 +4,7 @@ import numpy as np
 import time
 from CVAE import CVAE
 from utils import data_process, build_vocab, train_batch, eval_batches, infer
-os.environ["CUDA_VISIBLE_DEVICES"] = "1"
+os.environ["CUDA_VISIBLE_DEVICES"] = "3"
 
 FLAGS = tf.app.flags.FLAGS
 
@@ -18,10 +18,10 @@ tf.app.flags.DEFINE_integer("test_size", 5000, "test_size")
 tf.app.flags.DEFINE_string("word_vector", "../vector.txt", "word vector")
 
 tf.app.flags.DEFINE_string("data_dir", "../weibo_pair", "data_dir")
-tf.app.flags.DEFINE_string("train_dir", "./trainVAE", "train_dir")
-tf.app.flags.DEFINE_string("log_dir", "./logVAE", "log_dir")
+tf.app.flags.DEFINE_string("train_dir", "./trainVAEMom", "train_dir")
+tf.app.flags.DEFINE_string("log_dir", "./logVAEMom", "log_dir")
 tf.app.flags.DEFINE_string("attn_mode", "None", "attn_mode")
-tf.app.flags.DEFINE_string("opt", "SGD", "optimizer")
+tf.app.flags.DEFINE_string("opt", "Momentum", "optimizer")
 tf.app.flags.DEFINE_string("infer_path_post", "../weibo_pair/test.weibo_pair.response", "path of the post file to be infer")
 # tf.app.flags.DEFINE_string("infer_path_ref", "", "path of the ref file to be infer")
 tf.app.flags.DEFINE_string("infer_path_resp", "./test.infer", "path of the resp file to be infer")
@@ -35,7 +35,7 @@ tf.app.flags.DEFINE_integer("batch_size", 64, "batch_size")
 tf.app.flags.DEFINE_integer("embed_size", 100, "embed_size")
 tf.app.flags.DEFINE_integer("num_units", 512, "num_units")
 tf.app.flags.DEFINE_integer("num_layers", 1, "num_layers")
-tf.app.flags.DEFINE_integer("recog_hidden_units", 512, "recognition network MLP hidden layer units")
+# tf.app.flags.DEFINE_integer("recog_hidden_units", 512, "recognition network MLP hidden layer units")
 # tf.app.flags.DEFINE_integer("prior_hidden_units", 512, "prior network MLP hidden layer units")
 tf.app.flags.DEFINE_integer("z_dim", 128, "num_units")
 tf.app.flags.DEFINE_integer("full_kl_step", 50000, "kl_weight increase from 0 to 1 linearly in full_kl_step")
@@ -46,8 +46,8 @@ tf.app.flags.DEFINE_integer("vocab_size", 40000, "vocab_size")
 tf.app.flags.DEFINE_integer("save_every_n_iteration", 100, "save_every_n_iteration")
 
 tf.app.flags.DEFINE_float("l2_loss_weight", 0.001, "l2 regularization weight")
-tf.app.flags.DEFINE_float("learning_rate", 0.5, "learning rate")
-tf.app.flags.DEFINE_float("learning_rate_decay_factor", 0.95, "learning rate decay factor")
+tf.app.flags.DEFINE_float("learning_rate", 0.01, "learning rate")
+tf.app.flags.DEFINE_float("learning_rate_decay_factor", 1., "learning rate decay factor")
 tf.app.flags.DEFINE_float("momentum", 0.9, "momentum")
 tf.app.flags.DEFINE_float("keep_prob", 0.8, "keep_prob")
 
@@ -93,6 +93,8 @@ def main(unused_argv):
 
                 global_step = s2s.global_step.eval()
                 time_step += (time.time() - start_time)
+
+                train_writer.add_summary(ops[-1], global_step=global_step)
 
                 if global_step % FLAGS.save_every_n_iteration == 0:
                     time_step /= FLAGS.save_every_n_iteration

@@ -37,8 +37,7 @@ class CVAE(object):
         elif tfFLAGS.opt == 'Momentum':
             self.opt = tf.train.MomentumOptimizer(learning_rate=tfFLAGS.learning_rate, momentum=tfFLAGS.momentum)
         else:
-            self.learning_rate = tfFLAGS.learning_rate
-            self.opt = tf.train.AdamOptimizer()
+            self.opt = tf.train.AdamOptimizer(learning_rate=tfFLAGS.learning_rate)
 
         self._make_input(embed)
 
@@ -138,6 +137,11 @@ class CVAE(object):
                                     max_to_keep=1, pad_step_number=True, keep_checkpoint_every_n_hours=1.0)
         for var in tf.trainable_variables():
             print var
+        tf.summary.histogram('recog_mu', recog_mu)
+        tf.summary.histogram('recog_logvar', recog_logvar)
+        tf.summary.histogram('recog_z', self.recog_z)
+        tf.summary.histogram('prior_z', self.prior_z)
+        self.merge_summary_op = tf.summary.merge_all()
 
     def _make_input(self, embed):
         self.symbol2index = MutableHashTable(
@@ -402,7 +406,8 @@ class CVAE(object):
                            self.avg_kld,
                            self.kl_weights,
                            self.l2_loss,
-                           self.loss
+                           self.loss,
+                           self.merge_summary_op
                            # self.kl_loss,
                            # self.avg_kld,
                            # self.kl_weights,
@@ -421,7 +426,8 @@ class CVAE(object):
                            self.avg_kld,
                            self.kl_weights,
                            self.l2_loss,
-                           self.loss
+                           self.loss,
+                           self.merge_summary_op
                            # self.kl_loss,
                            # self.avg_kld,
                            # self.kl_weights,
