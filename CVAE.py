@@ -79,7 +79,7 @@ class CVAE(object):
             # recog_mu, recog_logvar = tf.split(recog_mulogvar, 2, axis=-1)
 
         with tf.variable_scope("PriorNetwork"):
-            prior_mu, prior_logvar = tf.zeros_like(recog_mu), tf.ones_like(recog_logvar)
+            prior_mu, prior_logvar = tf.zeros_like(recog_mu), tf.zeros_like(recog_logvar)
             self.prior_z = tf.identity(sample_gaussian(prior_mu, prior_logvar), name='prior_z')
         #     prior_input = self.cond_embed
         #     prior_hidden = tf.layers.dense(inputs=prior_input, units=self.prior_hidden_units, activation=tf.nn.tanh)
