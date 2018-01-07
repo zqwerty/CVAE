@@ -88,7 +88,7 @@ def eval_batches(data, batch_size):
         yield batched_data
 
 
-def infer(sess, infer_path_post, infer_path_resp, batch_size=128, use_encoder=True, use_sample=True, sample_times=5):
+def infer(sess, infer_path_post, infer_path_resp, batch_size=128, use_encoder=False, use_sample=True, sample_times=5):
     if infer_path_post is not "":
         f1 = open(infer_path_post)
         post = [line.strip().split() for line in f1]
