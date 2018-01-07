@@ -47,18 +47,18 @@ class CVAE(object):
                                       use_bias=False)
 
         with tf.variable_scope("encoders", initializer=tf.orthogonal_initializer()):
-            self.enc_post_outputs, self.enc_post_state = self._build_encoder(scope='post_encoder',
-                                                                             inputs=self.enc_post,
-                                                                             sequence_length=self.post_len)
+            # self.enc_post_outputs, self.enc_post_state = self._build_encoder(scope='post_encoder',
+            #                                                                  inputs=self.enc_post,
+            #                                                                  sequence_length=self.post_len)
             # self.enc_ref_outputs, self.enc_ref_state = self._build_encoder(scope='ref_encoder', inputs=self.enc_ref,
             #                                                                sequence_length=self.ref_len)
-            # self.enc_response_outputs, self.enc_response_state = self._build_encoder(scope='resp_encoder',
-            #                                                                          inputs=self.enc_response,
-            #                                                                          sequence_length=self.response_len)
+            self.enc_response_outputs, self.enc_response_state = self._build_encoder(scope='resp_encoder',
+                                                                                     inputs=self.enc_response,
+                                                                                     sequence_length=self.response_len)
 
-            self.post_state = self._get_representation_from_enc_state(self.enc_post_state)
+            # self.post_state = self._get_representation_from_enc_state(self.enc_post_state)
             # self.ref_state = self._get_representation_from_enc_state(self.enc_ref_state)
-            # self.response_state = self._get_representation_from_enc_state(self.enc_response_state)
+            self.response_state = self._get_representation_from_enc_state(self.enc_response_state)
             # self.cond_embed = tf.concat([self.post_state, self.ref_state], axis=-1)
 
         # with tf.variable_scope("hidden"):
@@ -66,7 +66,7 @@ class CVAE(object):
         #                                  name='enc_z')
 
         with tf.variable_scope("RecognitionNetwork"):
-            recog_input = self.post_state
+            recog_input = self.response_state
             recog_mulogvar = tf.layers.dense(inputs=recog_input, units=self.z_dim * 2, activation=None)
             recog_mu, recog_logvar = tf.split(recog_mulogvar, 2, axis=-1)
             self.mu = tf.identity(recog_mu, name='mu')
