@@ -53,13 +53,13 @@ class CVAE(object):
                                                                              sequence_length=self.post_len)
             # self.enc_ref_outputs, self.enc_ref_state = self._build_encoder(scope='ref_encoder', inputs=self.enc_ref,
             #                                                                sequence_length=self.ref_len)
-            # self.enc_response_outputs, self.enc_response_state = self._build_encoder(scope='resp_encoder',
-            #                                                                          inputs=self.enc_response,
-            #                                                                          sequence_length=self.response_len)
+            self.enc_response_outputs, self.enc_response_state = self._build_encoder(scope='resp_encoder',
+                                                                                     inputs=self.enc_response,
+                                                                                     sequence_length=self.response_len)
 
             self.post_state = self._get_representation_from_enc_state(self.enc_post_state)
             # self.ref_state = self._get_representation_from_enc_state(self.enc_ref_state)
-            # self.response_state = self._get_representation_from_enc_state(self.enc_response_state)
+            self.response_state = self._get_representation_from_enc_state(self.enc_response_state)
             # self.cond_embed = tf.concat([self.post_state, self.ref_state], axis=-1)
 
         # with tf.variable_scope("hidden"):
@@ -67,10 +67,11 @@ class CVAE(object):
         #                                  name='enc_z')
 
         with tf.variable_scope("RecognitionNetwork"):
-            recog_input = self.post_state
+            # recog_input = self.post_state
+            recog_input = tf.concat([self.post_state, self.response_state], axis=-1)
             recog_mulogvar = tf.layers.dense(inputs=recog_input, units=self.z_dim * 2, activation=None)
             recog_mu, recog_logvar = tf.split(recog_mulogvar, 2, axis=-1)
-            self.mu = tf.identity(recog_mu, name='mu')
+            self.recog_mu = tf.identity(recog_mu, name='mu')
             self.recog_z = tf.identity(sample_gaussian(recog_mu, recog_logvar), name='recog_z')
 
             # recog_input = tf.concat([self.cond_embed, self.response_state], axis=-1)
@@ -80,7 +81,11 @@ class CVAE(object):
             # recog_mu, recog_logvar = tf.split(recog_mulogvar, 2, axis=-1)
 
         with tf.variable_scope("PriorNetwork"):
-            prior_mu, prior_logvar = tf.zeros_like(recog_mu), tf.ones_like(recog_logvar)
+            # prior_mu, prior_logvar = tf.zeros_like(recog_mu), tf.ones_like(recog_logvar)
+            prior_input = self.post_state
+            prior_mulogvar = tf.layers.dense(inputs=prior_input, units=self.z_dim * 2, activation=None)
+            prior_mu, prior_logvar = tf.split(prior_mulogvar, 2, axis=-1)
+            self.prior_mu = tf.identity(prior_mu, name='mu')
             self.prior_z = tf.identity(sample_gaussian(prior_mu, prior_logvar), name='prior_z')
         #     prior_input = self.cond_embed
         #     prior_hidden = tf.layers.dense(inputs=prior_input, units=self.prior_hidden_units, activation=tf.nn.tanh)
@@ -93,7 +98,7 @@ class CVAE(object):
                                                     lambda: self.recog_z,
                                                     lambda: self.prior_z),
                                     lambda: tf.cond(self.use_encoder,
-                                                    lambda: self.mu,
+                                                    lambda: self.recog_mu,
                                                     lambda: self.input_z),
                                     name='latent_sample')
             # latent_sample = tf.cond(self.use_encoder,
@@ -101,21 +106,21 @@ class CVAE(object):
             #                         lambda: self.input_z),
             #                         name='latent_sample')
 
-            # gen_input = tf.concat([self.cond_embed, latent_sample], axis=-1)
+            gen_input = tf.concat([self.post_state, latent_sample], axis=-1)
             if self.use_lstm:
                 self.dec_init_state = tuple(
                     [tf.contrib.rnn.LSTMStateTuple(
-                        # c=tf.layers.dense(inputs=gen_input, units=self.num_units, activation=None),
-                        # h=tf.layers.dense(inputs=gen_input, units=self.num_units, activation=None))
-                        c=tf.layers.dense(inputs=latent_sample, units=self.num_units, activation=None, use_bias=False),
-                        h=tf.layers.dense(inputs=latent_sample, units=self.num_units, activation=None, use_bias=False))
+                        c=tf.layers.dense(inputs=gen_input, units=self.num_units, activation=None),
+                        h=tf.layers.dense(inputs=gen_input, units=self.num_units, activation=None))
+                        # c=tf.layers.dense(inputs=latent_sample, units=self.num_units, activation=None, use_bias=False),
+                        # h=tf.layers.dense(inputs=latent_sample, units=self.num_units, activation=None, use_bias=False))
                         for _ in
                         range(self.num_layers)])
                 print self.dec_init_state
             else:
                 self.dec_init_state = tuple(
-                    # [tf.layers.dense(inputs=gen_input, units=self.num_units, activation=None) for _ in
-                    [tf.layers.dense(inputs=latent_sample, units=self.num_units, activation=None, use_bias=False)
+                    [tf.layers.dense(inputs=gen_input, units=self.num_units, activation=None)
+                    # [tf.layers.dense(inputs=latent_sample, units=self.num_units, activation=None, use_bias=False)
                      for _ in range(self.num_layers)])
 
             kld = gaussian_kld(recog_mu, recog_logvar, prior_mu, prior_logvar)
