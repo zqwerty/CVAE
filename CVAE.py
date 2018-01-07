@@ -80,7 +80,7 @@ class CVAE(object):
             # recog_mu, recog_logvar = tf.split(recog_mulogvar, 2, axis=-1)
 
         with tf.variable_scope("PriorNetwork"):
-            prior_mu, prior_logvar = tf.zeros_like(recog_mu), tf.ones_like(recog_logvar)
+            prior_mu, prior_logvar = tf.zeros_like(recog_mu), tf.zeros_like(recog_logvar)
             # prior_input = self.post_state
             # prior_mulogvar = tf.layers.dense(inputs=prior_input, units=self.z_dim * 2, activation=None)
             # prior_mu, prior_logvar = tf.split(prior_mulogvar, 2, axis=-1)
