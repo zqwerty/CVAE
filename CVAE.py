@@ -69,7 +69,7 @@ class CVAE(object):
 
         with tf.variable_scope("RecognitionNetwork"):
             recog_input = self.response_state
-            recog_mulogvar = tf.layers.dense(inputs=recog_input, units=self.z_dim * 2, activation=None)
+            recog_mulogvar = tf.layers.dense(inputs=recog_input, units=self.z_dim * 2, activation=tf.nn.tanh)
             recog_mu, recog_logvar = tf.split(recog_mulogvar, 2, axis=-1)
             self.mu = tf.identity(recog_mu, name='mu')
             self.recog_z = tf.identity(sample_gaussian(recog_mu, recog_logvar), name='recog_z')
