@@ -131,13 +131,15 @@ def infer(sess, infer_path_post, infer_path_resp, batch_size=128):
             input_feed = {
                 'input/post_string:0': batch['post'],
                 'input/post_len:0': batch['post_len'],
-                'input/response_string:0': batch['response'],
-                'input/response_len:0': batch['response_len'],
+                'input/response_string:0': batch['post'],
+                'input/response_len:0': batch['post_len'],
                 'input/use_encoder:0': True,
             }
-            res = sess.run(['decode_1/inference:0', 'decode_2/beam_out:0'], input_feed)
-            inference = cut_eos(' '.join(res[0][0]))
+            res = sess.run(['decode_1/inference:0', 'decode_2/beam_out:0', 'decode/train_out:0'], input_feed)
             beam_out = cut_eos(' '.join(res[1][0, :, 0]))
+            inference = cut_eos(' '.join(res[0][0]))
+            train_out = cut_eos(' '.join(res[2][0]))
+            print 'train out > ' + train_out
             print 'inference > ' + inference
             print 'beam > ' + beam_out
 
