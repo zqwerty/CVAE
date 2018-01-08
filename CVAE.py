@@ -115,7 +115,8 @@ class CVAE(object):
         # Calculate and clip gradients
         params = tf.trainable_variables()
         self.l2_loss = self.l2_loss_weight * tf.reduce_sum([tf.nn.l2_loss(v) for v in params])
-        self.loss = self.sen_loss + self.l2_loss
+        # self.loss = self.sen_loss + self.l2_loss
+        self.loss = self.sen_loss
         gradients = tf.gradients(self.loss, params)
         clipped_gradients, _ = tf.clip_by_global_norm(gradients, self.max_gradient_norm)
         self.train_op = self.opt.apply_gradients(zip(clipped_gradients, params), global_step=self.global_step)
