@@ -46,25 +46,24 @@ class CVAE(object):
                                       kernel_initializer=tf.truncated_normal_initializer(stddev=0.1),
                                       use_bias=False)
 
-        with tf.variable_scope("encoders", initializer=tf.orthogonal_initializer()):
-            self.enc_post_outputs, self.enc_post_state = self._build_encoder(scope='post_encoder',
-                                                                             inputs=self.enc_post,
-                                                                             sequence_length=self.post_len)
+        # with tf.variable_scope("encoders", initializer=tf.orthogonal_initializer()):
+            # self.enc_post_outputs, self.enc_post_state = self._build_encoder(scope='post_encoder',
+            #                                                                  inputs=self.enc_post,
+            #                                                                  sequence_length=self.post_len)
             # self.enc_ref_outputs, self.enc_ref_state = self._build_encoder(scope='ref_encoder', inputs=self.enc_ref,
             #                                                                sequence_length=self.ref_len)
             # self.enc_response_outputs, self.enc_response_state = self._build_encoder(scope='resp_encoder',
             #                                                                          inputs=self.enc_response,
             #                                                                          sequence_length=self.response_len)
 
-            self.post_state = self._get_representation_from_enc_state(self.enc_post_state)
+            # self.post_state = self._get_representation_from_enc_state(self.enc_post_state)
             # self.ref_state = self._get_representation_from_enc_state(self.enc_ref_state)
             # self.response_state = self._get_representation_from_enc_state(self.enc_response_state)
             # self.cond_embed = tf.concat([self.post_state, self.ref_state], axis=-1)
 
-        with tf.variable_scope("hidden"):
+        # with tf.variable_scope("hidden"):
             # self.enc_z = tf.layers.dense(inputs=self.post_state, units=self.z_dim, activation=None, use_bias=False,
             #                              name='enc_z')
-            self.enc_z = tf.zeros_like(self.post_state)
 
         # with tf.variable_scope("RecognitionNetwork"):
         #     recog_input = tf.concat([self.cond_embed, self.response_state], axis=-1)
@@ -80,10 +79,11 @@ class CVAE(object):
         #     prior_mu, prior_logvar = tf.split(prior_mulogvar, 2, axis=-1)
 
         with tf.variable_scope("GenerationNetwork"):
-            latent_sample = tf.cond(self.use_encoder,
-                                    lambda: self.enc_z,
-                                    lambda: self.input_z,
-                                    name='latent_sample')
+            # latent_sample = tf.cond(self.use_encoder,
+            #                         lambda: self.enc_z,
+            #                         lambda: self.input_z,
+            #                         name='latent_sample')
+            latent_sample = tf.zeros((self.batch_size, self.z_dim), dtype=tf.float32, name='latent_sample')
             # latent_sample = tf.cond(self.use_encoder,
             #                         lambda: self.enc_z,
             #                         lambda: self.input_z),
@@ -117,7 +117,7 @@ class CVAE(object):
         params = tf.trainable_variables()
         self.l2_loss = self.l2_loss_weight * tf.reduce_sum([tf.nn.l2_loss(v) for v in params])
         # self.loss = self.sen_loss + self.l2_loss
-        self.loss = self.sen_loss 
+        self.loss = self.sen_loss
         gradients = tf.gradients(self.loss, params)
         clipped_gradients, _ = tf.clip_by_global_norm(gradients, self.max_gradient_norm)
         self.train_op = self.opt.apply_gradients(zip(clipped_gradients, params), global_step=self.global_step)
@@ -222,7 +222,7 @@ class CVAE(object):
 
     def _build_decoder(self):
         with tf.variable_scope("decode", initializer=tf.orthogonal_initializer()):
-            dec_cell, init_state = self._build_decoder_cell(self.enc_post_outputs, self.post_len, self.dec_init_state)
+            dec_cell, init_state = self._build_decoder_cell(None, None, self.dec_init_state)
 
             train_helper = tf.contrib.seq2seq.TrainingHelper(
                 inputs=self.dec_inp,
@@ -265,7 +265,7 @@ class CVAE(object):
             self.train_out = self.index2symbol.lookup(tf.cast(train_output.sample_id, tf.int64), name='train_out')
 
         with tf.variable_scope("decode", reuse=True):
-            dec_cell, init_state = self._build_decoder_cell(self.enc_post_outputs, self.post_len, self.dec_init_state)
+            dec_cell, init_state = self._build_decoder_cell(None, None, self.dec_init_state)
 
             start_tokens = tf.tile(tf.constant([GO_ID], dtype=tf.int32), [self.batch_size])
             end_token = EOS_ID
@@ -289,10 +289,10 @@ class CVAE(object):
 
         with tf.variable_scope("decode", reuse=True):
             dec_init_state = tf.contrib.seq2seq.tile_batch(self.dec_init_state, self.beam_width)
-            enc_outputs = tf.contrib.seq2seq.tile_batch(self.enc_post_outputs, self.beam_width)
-            post_len = tf.contrib.seq2seq.tile_batch(self.post_len, self.beam_width)
+            # enc_outputs = tf.contrib.seq2seq.tile_batch(self.enc_post_outputs, self.beam_width)
+            # post_len = tf.contrib.seq2seq.tile_batch(self.post_len, self.beam_width)
 
-            dec_cell, init_state = self._build_decoder_cell(enc_outputs, post_len, dec_init_state,
+            dec_cell, init_state = self._build_decoder_cell(None, None, dec_init_state,
                                                             beam_width=self.beam_width)
 
             beam_decoder = tf.contrib.seq2seq.BeamSearchDecoder(

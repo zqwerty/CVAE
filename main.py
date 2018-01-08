@@ -4,7 +4,7 @@ import numpy as np
 import time
 from CVAE import CVAE
 from utils import data_process, build_vocab, train_batch, eval_batches, infer
-os.environ["CUDA_VISIBLE_DEVICES"] = "2"
+os.environ["CUDA_VISIBLE_DEVICES"] = "3"
 
 FLAGS = tf.app.flags.FLAGS
 
@@ -18,8 +18,8 @@ tf.app.flags.DEFINE_integer("test_size", 5000, "test_size")
 tf.app.flags.DEFINE_string("word_vector", "../vector.txt", "word vector")
 
 tf.app.flags.DEFINE_string("data_dir", "../weibo_pair", "data_dir")
-tf.app.flags.DEFINE_string("train_dir", "./trainseq2seq", "train_dir")
-tf.app.flags.DEFINE_string("log_dir", "./logseq2seq", "log_dir")
+tf.app.flags.DEFINE_string("train_dir", "./trainRNNLM", "train_dir")
+tf.app.flags.DEFINE_string("log_dir", "./logRNNLM", "log_dir")
 tf.app.flags.DEFINE_string("attn_mode", "None", "attn_mode")
 tf.app.flags.DEFINE_string("opt", "SGD", "optimizer")
 tf.app.flags.DEFINE_string("infer_path_post", "../weibo_pair/test.weibo_pair.post", "path of the post file to be infer")
