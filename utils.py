@@ -215,11 +215,11 @@ class data_process(object):
     def __init__(self,
                  tfFLAGS):
         self.data_dir = tfFLAGS.data_dir
-        self.train_from = os.path.join(self.data_dir, 'train.weibo_pair.response')
+        self.train_from = os.path.join(self.data_dir, 'train.weibo_pair.post')
         self.train_to = os.path.join(self.data_dir, 'train.weibo_pair.response')
-        self.valid_from = os.path.join(self.data_dir, 'valid.weibo_pair.response')
+        self.valid_from = os.path.join(self.data_dir, 'valid.weibo_pair.post')
         self.valid_to = os.path.join(self.data_dir, 'valid.weibo_pair.response')
-        self.test_from = os.path.join(self.data_dir, 'test.weibo_pair.response')
+        self.test_from = os.path.join(self.data_dir, 'test.weibo_pair.post')
         self.test_to = os.path.join(self.data_dir, 'test.weibo_pair.response')
         if not tfFLAGS.split:
             self.data_from = os.path.join(self.data_dir, tfFLAGS.data_from)
