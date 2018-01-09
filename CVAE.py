@@ -100,11 +100,11 @@ class CVAE(object):
                         range(self.num_layers)])
                 print self.dec_init_state
             else:
-                # self.dec_init_state = tuple(
-                #     # [tf.layers.dense(inputs=gen_input, units=self.num_units, activation=None) for _ in
-                #     [tf.layers.dense(inputs=latent_sample, units=self.num_units, activation=None, use_bias=False)
-                #      for _ in range(self.num_layers)])
-                self.dec_init_state = self.enc_post_state
+                self.dec_init_state = tuple(
+                    # [tf.layers.dense(inputs=gen_input, units=self.num_units, activation=None) for _ in
+                    [tf.layers.dense(inputs=latent_sample, units=self.num_units, activation=None, use_bias=False)
+                     for _ in range(self.num_layers)])
+                # self.dec_init_state = self.enc_post_state
 
             # kld = gaussian_kld(recog_mu, recog_logvar, prior_mu, prior_logvar)
             # self.avg_kld = tf.reduce_mean(kld)
