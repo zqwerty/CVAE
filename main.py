@@ -18,8 +18,8 @@ tf.app.flags.DEFINE_integer("test_size", 5000, "test_size")
 tf.app.flags.DEFINE_string("word_vector", "../vector.txt", "word vector")
 
 tf.app.flags.DEFINE_string("data_dir", "../weibo_pair", "data_dir")
-tf.app.flags.DEFINE_string("train_dir", "./train2RNNLM", "train_dir")
-tf.app.flags.DEFINE_string("log_dir", "./log2RNNLM", "log_dir")
+tf.app.flags.DEFINE_string("train_dir", "./train", "train_dir")
+tf.app.flags.DEFINE_string("log_dir", "./log", "log_dir")
 tf.app.flags.DEFINE_string("attn_mode", "None", "attn_mode")
 tf.app.flags.DEFINE_string("opt", "SGD", "optimizer")
 tf.app.flags.DEFINE_string("infer_path_post", "../weibo_pair/test.weibo_pair.post", "path of the post file to be infer")
@@ -27,7 +27,7 @@ tf.app.flags.DEFINE_string("infer_path_post", "../weibo_pair/test.weibo_pair.pos
 tf.app.flags.DEFINE_string("infer_path_resp", "./test.infer", "path of the resp file to be infer")
 tf.app.flags.DEFINE_string("save_para_path", "", "path of the trained model, default latest in train_dir")
 
-tf.app.flags.DEFINE_boolean("use_lstm", False, "use_lstm")
+tf.app.flags.DEFINE_boolean("use_lstm", True, "use_lstm")
 tf.app.flags.DEFINE_boolean("is_train", True, "is_train")
 tf.app.flags.DEFINE_boolean("bi_encode", False, "bidirectional encoder")
 
