@@ -66,8 +66,8 @@ class CVAE(object):
         #                                  name='enc_z')
 
         with tf.variable_scope("RecognitionNetwork"):
-            recog_input = self.response_state
-            # recog_input = tf.concat([self.post_state, self.response_state], axis=-1)
+            # recog_input = self.response_state
+            recog_input = tf.concat([self.post_state, self.response_state], axis=-1)
             recog_mulogvar = tf.layers.dense(inputs=recog_input, units=self.z_dim * 2, activation=None)
             recog_mu, recog_logvar = tf.split(recog_mulogvar, 2, axis=-1)
             self.recog_mu = tf.identity(recog_mu, name='mu')
