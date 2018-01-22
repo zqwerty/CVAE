@@ -88,7 +88,7 @@ def eval_batches(data, batch_size):
         yield batched_data
 
 
-def infer(sess, infer_path_post, infer_path_resp, batch_size=128, use_encoder=True, use_sample=True, sample_times=5):
+def infer(sess, infer_path_post, infer_path_resp, batch_size=128, use_encoder=True, use_sample=True, sample_times=10):
     if infer_path_post is not "":
         f1 = open(infer_path_post)
         post = [line.strip().split() for line in f1]
@@ -97,7 +97,7 @@ def infer(sess, infer_path_post, infer_path_resp, batch_size=128, use_encoder=Tr
 
         data = []
         for p in post:
-            data.append({'post': p, 'response': []})
+            data.append({'post': p, 'response': p})
 
         id = 0
         for j in range((len(data)+batch_size-1) // batch_size):
@@ -116,7 +116,7 @@ def infer(sess, infer_path_post, infer_path_resp, batch_size=128, use_encoder=Tr
                 for j in range(sample_times):
                     res = sess.run(['decode_1/inference:0', 'decode_2/beam_out:0'], input_feed)
                     print >> f2, 'infer: ' + cut_eos(' '.join(res[0][i]))
-                    print >> f2, 'beam: ' + cut_eos(' '.join(res[1][i, :, 0]))
+                    # print >> f2, 'beam: ' + cut_eos(' '.join(res[1][i, :, 0]))
                 print >> f2, ''
 
                 id += 1
@@ -126,7 +126,7 @@ def infer(sess, infer_path_post, infer_path_resp, batch_size=128, use_encoder=Tr
         while True:
             infer_data = {}
             infer_data['post'] = raw_input('post > ').strip().split()
-            infer_data['response'] = '233'.strip().split()
+            infer_data['response'] = infer_data['post']
             infer_data = [infer_data]
             batch = gen_batched_data(infer_data)
 
@@ -139,7 +139,7 @@ def infer(sess, infer_path_post, infer_path_resp, batch_size=128, use_encoder=Tr
 
             infer_data = {}
             infer_data['post'] = raw_input('post > ').strip().split()
-            infer_data['response'] = '233'.strip().split()
+            infer_data['response'] = infer_data['post']
             infer_data = [infer_data]
             batch = gen_batched_data(infer_data)
 

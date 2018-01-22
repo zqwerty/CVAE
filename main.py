@@ -4,7 +4,7 @@ import numpy as np
 import time
 from CVAE import CVAE
 from utils import data_process, build_vocab, train_batch, eval_batches, infer
-os.environ["CUDA_VISIBLE_DEVICES"] = "1"
+os.environ["CUDA_VISIBLE_DEVICES"] = "2"
 
 FLAGS = tf.app.flags.FLAGS
 
@@ -18,16 +18,16 @@ tf.app.flags.DEFINE_integer("test_size", 5000, "test_size")
 tf.app.flags.DEFINE_string("word_vector", "../vector.txt", "word vector")
 
 tf.app.flags.DEFINE_string("data_dir", "../weibo_pair", "data_dir")
-tf.app.flags.DEFINE_string("train_dir", "./train2VAE", "train_dir")
-tf.app.flags.DEFINE_string("log_dir", "./log2VAE", "log_dir")
+tf.app.flags.DEFINE_string("train_dir", "./train2VAE8", "train_dir")
+tf.app.flags.DEFINE_string("log_dir", "./log2VAE8", "log_dir")
 tf.app.flags.DEFINE_string("attn_mode", "None", "attn_mode")
 tf.app.flags.DEFINE_string("opt", "SGD", "optimizer")
 tf.app.flags.DEFINE_string("infer_path_post", "../weibo_pair/test.weibo_pair.response", "path of the post file to be infer")
 # tf.app.flags.DEFINE_string("infer_path_ref", "", "path of the ref file to be infer")
-tf.app.flags.DEFINE_string("infer_path_resp", "./test.infer", "path of the resp file to be infer")
+tf.app.flags.DEFINE_string("infer_path_resp", "./test.inferVAE4", "path of the resp file to be infer")
 tf.app.flags.DEFINE_string("save_para_path", "", "path of the trained model, default latest in train_dir")
 
-tf.app.flags.DEFINE_boolean("use_lstm", True, "use_lstm")
+tf.app.flags.DEFINE_boolean("use_lstm", False, "use_lstm")
 tf.app.flags.DEFINE_boolean("is_train", True, "is_train")
 tf.app.flags.DEFINE_boolean("bi_encode", False, "bidirectional encoder")
 
@@ -47,7 +47,7 @@ tf.app.flags.DEFINE_integer("save_every_n_iteration", 100, "save_every_n_iterati
 
 tf.app.flags.DEFINE_float("l2_loss_weight", 0.001, "l2 regularization weight")
 tf.app.flags.DEFINE_float("learning_rate", 0.5, "learning rate")
-tf.app.flags.DEFINE_float("learning_rate_decay_factor", 0.99, "learning rate decay factor")
+tf.app.flags.DEFINE_float("learning_rate_decay_factor", 0.95, "learning rate decay factor")
 tf.app.flags.DEFINE_float("momentum", 0.9, "momentum")
 tf.app.flags.DEFINE_float("keep_prob", 0.8, "keep_prob")
 
